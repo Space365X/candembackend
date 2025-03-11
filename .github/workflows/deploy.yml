@@ -17,16 +17,31 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.KEY }}
+          key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
+            # Create and navigate to the project directory
             mkdir -p /home/ec2-user/bank_api_project
             cd /home/ec2-user/bank_api_project
-            git pull origin main || git clone https://github.com/Space365X/candembackend.git
+
+            # Check if it's a Git repository, pull or clone
+            if [ -d ".git" ]; then
+              git pull origin main
+            else
+              git clone https://github.com/Space365X/candembackend
+            fi
+
+            # Set environment variables
             export MONGO_URI=${{ secrets.MONGO_URI }}
             export JWT_SECRET=${{ secrets.JWT_SECRET }}
             export REDIS_HOST=${{ secrets.REDIS_HOST }}
             export REDIS_PORT=${{ secrets.REDIS_PORT }}
+            # Add if required
+            export REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+
+            # Build and run Docker Compose
             docker-compose build
             docker-compose up -d
+
+            # Restart NGINX
             sudo systemctl restart nginx
