@@ -17,7 +17,7 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}  # Corrected to match your previous setup
+          key: ${{ secrets.KEY }}  # Corrected to match your previous setup
           port: 22
           script: |
             # Create and navigate to the project directory
