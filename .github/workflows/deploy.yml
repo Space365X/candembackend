@@ -17,18 +17,21 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.KEY }}  # Corrected to match your previous setup
+          key: ${{ secrets.KEY }}
           port: 22
           script: |
             # Create and navigate to the project directory
             mkdir -p /home/ec2-user/bank_api_project
             cd /home/ec2-user/bank_api_project
 
-            # Check if it's a Git repository, pull or clone using SSH
+            # Set Git credentials using the PAT
+            git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
+            # Check if it's a Git repository, pull or clone using HTTPS
             if [ -d ".git" ]; then
               git pull origin main
             else
-              git clone git@github.com:Space365X/candembackend.git .  # Updated repo name and SSH URL
+              git clone https://github.com/Space365X/bank_api_project.git .
             fi
 
             # Set environment variables
