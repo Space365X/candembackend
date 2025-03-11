@@ -25,13 +25,13 @@ jobs:
             cd /home/ec2-user/bank_api_project
 
             # Set Git credentials using the PAT
-            git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+            git config --global url."https://x-access-token:${{ secrets.TOKEN }}@github.com/".insteadOf "https://github.com/"
 
             # Check if it's a Git repository, pull or clone using HTTPS
             if [ -d ".git" ]; then
               git pull origin main
             else
-              git clone https://github.com/Space365X/bank_api_project.git .
+              git clone https://github.com/Space365X/candembackend.git .
             fi
 
             # Set environment variables
@@ -40,7 +40,6 @@ jobs:
             export REDIS_HOST=${{ secrets.REDIS_HOST }}
             export REDIS_PORT=${{ secrets.REDIS_PORT }}
             # Add if required
-            export REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
 
             # Build and run Docker Compose with error checking
             if [ -f "docker-compose.yml" ]; then
