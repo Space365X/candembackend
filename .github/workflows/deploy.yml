@@ -17,18 +17,18 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.KEY }}
+          key: ${{ secrets.EC2_SSH_KEY }}  # Corrected to match your previous setup
           port: 22
           script: |
             # Create and navigate to the project directory
             mkdir -p /home/ec2-user/bank_api_project
             cd /home/ec2-user/bank_api_project
 
-            # Check if it's a Git repository, pull or clone
+            # Check if it's a Git repository, pull or clone using SSH
             if [ -d ".git" ]; then
               git pull origin main
             else
-              git clone https://github.com/Space365X/candembackend
+              git clone git@github.com:Space365X/candembackend.git .  # Updated repo name and SSH URL
             fi
 
             # Set environment variables
@@ -39,9 +39,14 @@ jobs:
             # Add if required
             export REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
 
-            # Build and run Docker Compose
-            docker-compose build
-            docker-compose up -d
+            # Build and run Docker Compose with error checking
+            if [ -f "docker-compose.yml" ]; then
+              docker-compose build
+              docker-compose up -d
+            else
+              echo "Error: docker-compose.yml not found!"
+              exit 1
+            fi
 
             # Restart NGINX
             sudo systemctl restart nginx
