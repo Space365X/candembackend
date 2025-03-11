@@ -1,0 +1,32 @@
+name: Deploy Backend to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.KEY }}
+          port: 22
+          script: |
+            mkdir -p /home/ec2-user/bank_api_project
+            cd /home/ec2-user/bank_api_project
+            git pull origin main || git clone https://github.com/Space365X/candembackend.git
+            export MONGO_URI=${{ secrets.MONGO_URI }}
+            export JWT_SECRET=${{ secrets.JWT_SECRET }}
+            export REDIS_HOST=${{ secrets.REDIS_HOST }}
+            export REDIS_PORT=${{ secrets.REDIS_PORT }}
+            docker-compose build
+            docker-compose up -d
+            sudo systemctl restart nginx
