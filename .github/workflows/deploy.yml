@@ -25,7 +25,7 @@ jobs:
             cd /home/ec2-user/bank_api_project
 
             # Set Git credentials using the PAT
-            git config --global url."https://x-access-token:${{ "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" }}@github.com/".insteadOf "https://github.com/"
+            git config --global url."https://x-access-token:${{secrets.Token }}@github.com/".insteadOf "https://github.com/"
 
             # Check if it's a Git repository, pull or clone using HTTPS
             if [ -d ".git" ]; then
