@@ -65,16 +65,15 @@ jobs:
             mkdir -p /home/ec2-user/candembackend
             cd /home/ec2-user/candembackend
 
-           
+            # Add GitHub's host key to known_hosts to avoid host key verification failure
+            mkdir -p ~/.ssh
+            ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
 
-            # Set Git credentials using the PAT
-            git config --global url."https://x-access-token:${{ secrets.TOKEN }}@github.com/".insteadOf "https://github.com/"
-
-            # Check if it's a Git repository, pull or clone using HTTPS
+            # Check if it's a Git repository, pull or clone using SSH
             if [ -d ".git" ]; then
               git pull origin main
             else
-              git clone https://github.com/Space365X/candembackend.git .
+              git clone git@github.com:Space365X/candembackend.git .
             fi
 
             # Verify docker-compose.yml exists
