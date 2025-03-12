@@ -65,8 +65,7 @@ jobs:
             mkdir -p /home/ec2-user/candembackend
             cd /home/ec2-user/candembackend
 
-            # Debug: Print the token (masked for security)
-            echo "Token starts with: ${{ secrets.TOKEN | truncate(4) }}..."  # Shows first 4 chars
+           
 
             # Set Git credentials using the PAT
             git config --global url."https://x-access-token:${{ secrets.TOKEN }}@github.com/".insteadOf "https://github.com/"
