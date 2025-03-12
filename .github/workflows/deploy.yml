@@ -58,17 +58,20 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.KEY }}  # Updated to match your earlier secret name
+          key: ${{ secrets.KEY }}
           port: 22
           script: |
             # Create and navigate to the project directory
             mkdir -p /home/ec2-user/candembackend
             cd /home/ec2-user/candembackend
 
+            # Debug: Print the token (masked for security)
+            echo "Token starts with: ${{ secrets.TOKEN | truncate(4) }}..."  # Shows first 4 chars
+
             # Set Git credentials using the PAT
             git config --global url."https://x-access-token:${{ secrets.TOKEN }}@github.com/".insteadOf "https://github.com/"
 
-            # Clone or pull the repository
+            # Check if it's a Git repository, pull or clone using HTTPS
             if [ -d ".git" ]; then
               git pull origin main
             else
@@ -88,4 +91,3 @@ jobs:
               echo "Error: docker-compose.yml not found!"
               exit 1
             fi
-
