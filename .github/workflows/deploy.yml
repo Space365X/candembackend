@@ -1,71 +1,91 @@
 name: Test, Build, Push, Deploy FastAPI to AWS
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-        steps:
-            -   uses: actions/checkout@v3
-            -   name: Set up Python
-                uses: actions/setup-python@v4
-                with:
-                    python-version: "3.10"
-            -   name: Install dependencies
-                run: |
-                    python -m pip install --upgrade pip
-                    pip install -r requirements.txt
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
+  build_container_and_push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: space365labs/candembackend
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: space365/candembackend:api
+          labels: ${{ steps.meta.outputs.labels }}
 
-    build_container_and_push:
-        name: Build and Push Docker Image
-        runs-on: ubuntu-latest
-        needs: [ build ]
-        steps:
-            -   name: Check out the repo
-                uses: actions/checkout@v4
-            -   name: Log in to Docker Hub
-                uses: docker/login-action@v3
-                with:
-                    username: ${{ secrets.DOCKERHUB_USERNAME }}
-                    password: ${{ secrets.DOCKERHUB_TOKEN }}
-            -   name: Extract metadata (tags, labels) for Docker
-                id: meta
-                uses: docker/metadata-action@v5
-                with:
-                    images: space365labs/candembackend
-            -   name: Build and push Docker image
-                uses: docker/build-push-action@v5
-                with:
-                    context: .
-                    file: ./Dockerfile
-                    push: true
-                    tags: space365/candembackend:api
-                    labels: ${{ steps.meta.outputs.labels }}
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [build_container_and_push]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    deploy:
-        runs-on: ubuntu-latest
-        if: ${{ github.ref == 'refs/heads/main' }}
-        needs: [ build_container_and_push ]
-        steps:
-            -   name: Checkout code
-                uses: actions/checkout@v4
-            -   name: Deploy FastAPI to AWS
-                uses: appleboy/ssh-action@v1.0.0
-                with:
-                    host: ${{ secrets.EC2_HOST }}
-                    username: ${{ secrets.EC2_USER }}
-                    key: ${{ secrets.KEY }}
-                    port: 22
-                    script: |
-                        docker-compose down
-                        IMAGES=$(docker images -q)
-                        if [ -n "$IMAGES" ]; then
-                            docker rmi -f $IMAGES
-                        fi
-                        docker-compose pull
-                        docker-compose up -d
+      - name: Deploy FastAPI to AWS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}  # Updated to match your earlier secret name
+          port: 22
+          script: |
+            # Create and navigate to the project directory
+            mkdir -p /home/ec2-user/candembackend
+            cd /home/ec2-user/candembackend
+
+            # Set Git credentials using the PAT
+            git config --global url."https://x-access-token:${{ secrets.TOKEN }}@github.com/".insteadOf "https://github.com/"
+
+            # Clone or pull the repository
+            if [ -d ".git" ]; then
+              git pull origin main
+            else
+              git clone https://github.com/Space365X/candembackend.git .
+            fi
+
+            # Verify docker-compose.yml exists
+            if [ -f "docker-compose.yml" ]; then
+              docker-compose down
+              IMAGES=$(docker images -q)
+              if [ -n "$IMAGES" ]; then
+                docker rmi -f $IMAGES
+              fi
+              docker-compose pull
+              docker-compose up -d
+            else
+              echo "Error: docker-compose.yml not found!"
+              exit 1
+            fi
 
